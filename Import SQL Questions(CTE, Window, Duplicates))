@@ -1,0 +1,240 @@
+
+
+
+use net;
+
+CREATE TABLE Employee (
+    emp_id INT PRIMARY KEY,
+    name VARCHAR(50),
+    salary INT,
+    department VARCHAR(50),
+    manager_id INT
+);
+
+INSERT INTO Employee (emp_id, name, salary, department, manager_id) VALUES
+(101, 'Alice', 90000, 'Sales', NULL),
+(102, 'Bob', 60000, 'HR', 101),
+(103, 'Charlie', 80000, 'Sales', 101),
+(104, 'David', 70000, 'Finance', 101),
+(105, 'Eve', 95000, 'HR', 102),
+(106, 'Frank', 75000, 'Sales', 103);
+
+
+WITH avg_sal AS (
+  SELECT AVG(salary) AS sal FROM Employee
+)
+
+SELECT *
+FROM Employee
+WHERE salary > (SELECT sal FROM avg_sal);
+
+
+CREATE TABLE Sales (
+    order_id INT PRIMARY KEY,
+    customer_id INT,
+    order_date DATE,
+    amount INT
+);
+
+INSERT INTO Sales (order_id, customer_id, order_date, amount) VALUES
+(1, 101, '2023-01-01', 200),
+(2, 102, '2023-01-05', 1200),
+(3, 101, '2023-01-07', 800),
+(4, 103, '2023-01-10', 450),
+(5, 102, '2023-01-12', 300),
+(6, 101, '2023-01-15', 1500);
+
+WITH ranked AS (
+  SELECT salary, DENSE_RANK() OVER(ORDER BY salary DESC) AS ranked 
+  FROM employee
+)
+
+SELECT salary
+FROM ranked
+WHERE ranked = 2;
+
+WITH sales_running_total AS (
+  SELECT 
+    order_id,
+    customer_id,
+    order_date,
+    amount,
+    SUM(amount) OVER (
+      PARTITION BY customer_id
+      ORDER BY order_date
+      ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+    ) AS running_total
+  FROM sales
+)
+
+SELECT * 
+FROM sales_running_total
+ORDER BY customer_id, order_date;
+
+
+CREATE TABLE Orders (
+    order_id INT PRIMARY KEY,
+    customer_id INT,
+    order_date DATE
+);
+INSERT INTO Orders (order_id, customer_id, order_date) VALUES
+(1, 101, '2024-01-01'),
+(2, 102, '2024-01-02'),
+(3, 101, '2024-01-05'),
+(4, 103, '2024-01-06'),
+(5, 101, '2024-01-10'),
+(6, 102, '2024-01-15'),
+(7, 101, '2024-01-20'),
+(8, 102, '2024-01-22'),
+(9, 103, '2024-01-25'),
+(10, 102, '2024-01-28'),
+(11, 104, '2024-01-30'),
+(12, 101, '2024-02-01');
+
+with customm as (select customer_id, count(*) as total_orders from orders  group by customer_id)
+select customer_id from customm where total_orders > 3;
+
+CREATE TABLE Students (
+    student_id INT PRIMARY KEY,
+    name VARCHAR(50),
+    marks INT
+);
+INSERT INTO Students (student_id, name, marks) VALUES
+(1, 'Alice', 95),
+(2, 'Bob', 88),
+(3, 'Charlie', 72),
+(4, 'David', 65),
+(5, 'Eve', 80),
+(6, 'Frank', 90),
+(7, 'Grace', 70),
+(8, 'Helen', 60);
+
+
+SELECT 
+    student_id,
+    name,
+    marks,
+    CASE
+        WHEN marks > 90 THEN 'A'
+        WHEN marks BETWEEN 80 AND 90 THEN 'B'
+        WHEN marks < 80 THEN 'C'
+        ELSE 'D'
+    END AS grade
+FROM
+    students;
+ drop table if  exists Sales;   
+CREATE TABLE sale (
+    order_id INT PRIMARY KEY,
+    amount DECIMAL(10, 2)
+);
+INSERT INTO sale (order_id, amount) VALUES
+(1, 1200.00),
+(2, 800.00),
+(3, 450.00),
+(4, 999.99),
+(5, 2000.00),
+(6, 500.00),
+(7, 300.00);
+
+SELECT 
+    order_id,
+    amount,
+    CASE
+        WHEN amount > 1000 THEN 'High'
+        WHEN amount BETWEEN 500 AND 1000 THEN 'Medium'
+        WHEN amount < 500 THEN 'Low'
+    END AS amount_category
+FROM
+    sale;
+
+
+CREATE TABLE Transactions (
+    transaction_id INT PRIMARY KEY,
+    customer_id INT,
+    type VARCHAR(10),
+    amount DECIMAL(10 , 2 )
+);
+
+INSERT INTO Transactions (transaction_id, customer_id, type, amount) VALUES
+(1, 101, 'credit', 1000.00),
+(2, 101, 'debit', 200.00),
+(3, 102, 'credit', 1500.00),
+(4, 101, 'credit', 500.00),
+(5, 102, 'debit', 300.00),
+(6, 103, 'debit', 100.00),
+(7, 103, 'credit', 200.00),
+(8, 101, 'debit', 100.00);
+
+
+SELECT 
+    customer_id,
+    SUM(CASE
+        WHEN type = 'credit' THEN amount
+        ELSE 0
+    END) AS total_credit,
+    SUM(CASE
+        WHEN type = 'debit' THEN amount
+        ELSE 0
+    END) AS total_debit
+FROM
+    Transactions
+GROUP BY customer_id;
+
+CREATE TABLE Employeee (
+    emp_id INT PRIMARY KEY,
+    department VARCHAR(50),
+    salary INT
+);
+
+INSERT INTO Employeee (emp_id, department, salary) VALUES
+(1, 'Sales', 50000),
+(2, 'HR', 45000),
+(3, 'IT', 60000),
+(4, 'Sales', 52000),
+(5, 'Finance', 55000),
+(6, 'HR', 47000),
+(7, 'Marketing', 53000);
+
+SELECT 
+    emp_id, department, salary
+FROM
+    Employeee
+ORDER BY CASE
+    WHEN department = 'HR' THEN 1
+    WHEN department = 'IT' THEN 2
+    ELSE 3
+END;
+
+CREATE TABLE Empl (
+    emp_id INT PRIMARY KEY,
+    department VARCHAR(50),
+    salary INT
+);
+INSERT INTO Empl (emp_id, department, salary) VALUES
+(1, 'Sales', 50000),
+(2, 'Sales', 50000),  -- duplicate of emp_id 1 (same department & salary)
+(3, 'Sales', 52000),
+(4, 'HR', 45000),
+(5, 'HR', 45000),     -- duplicate of emp_id 4
+(6, 'IT', 60000);
+
+
+SET SQL_SAFE_UPDATES = 0;
+
+SELECT * 
+FROM (
+    SELECT *, ROW_NUMBER() OVER (PARTITION BY department ORDER BY salary) AS rankk 
+    FROM Empl
+) AS ranked_employees
+WHERE rankk = 1;
+
+WITH cte1 AS (
+    SELECT emp_id,
+           ROW_NUMBER() OVER (PARTITION BY department ORDER BY salary) AS rankk
+    FROM Empl
+)
+DELETE FROM Empl
+WHERE emp_id IN (
+    SELECT emp_id FROM cte1 WHERE rankk = 1
+);
+select * from Empl;
